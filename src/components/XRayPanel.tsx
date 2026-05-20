@@ -10,6 +10,9 @@ interface Props {
   usage: UsageStats | null;
   latencyMs: number | null;
   ttfbMs: number | null;
+  /** The run immediately before this one — powers the cost delta. */
+  compareModel?: string;
+  compareUsage?: UsageStats | null;
 }
 
 const SEGMENTS = [
@@ -19,7 +22,14 @@ const SEGMENTS = [
   { key: "output_tokens", label: "output", color: "var(--output)" },
 ] as const;
 
-export function XRayPanel({ model, usage, latencyMs, ttfbMs }: Props) {
+export function XRayPanel({
+  model,
+  usage,
+  latencyMs,
+  ttfbMs,
+  compareModel,
+  compareUsage,
+}: Props) {
   const u = usage ?? {
     input_tokens: 0,
     output_tokens: 0,
@@ -29,6 +39,12 @@ export function XRayPanel({ model, usage, latencyMs, ttfbMs }: Props) {
   const total =
     u.input_tokens + u.output_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens;
   const cost = computeCost(model, u);
+
+  // Cost delta vs the previous run.
+  const prevCost =
+    compareUsage && compareModel
+      ? computeCost(compareModel, compareUsage).total
+      : null;
 
   // Cache economics
   const p = priceOf(model);
@@ -108,6 +124,11 @@ export function XRayPanel({ model, usage, latencyMs, ttfbMs }: Props) {
             label="Cost"
             value={formatUSD(cost.total)}
             sub={`est · ${cost.tier} pricing`}
+            delta={
+              prevCost != null && prevCost > 0 && cost.total > 0 ? (
+                <CostDelta from={prevCost} to={cost.total} />
+              ) : null
+            }
           />
           <Stat
             icon={<Zap size={13} />}
@@ -179,11 +200,13 @@ function Stat({
   label,
   value,
   sub,
+  delta,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   sub: string;
+  delta?: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-border bg-bg p-2.5">
@@ -191,9 +214,30 @@ function Stat({
         {icon}
         <span className="text-[10px] font-medium uppercase tracking-wider">{label}</span>
       </div>
-      <div className="mt-1 font-mono text-lg leading-none text-fg">{value}</div>
+      <div className="mt-1 flex items-baseline justify-between gap-1">
+        <span className="font-mono text-lg leading-none text-fg">{value}</span>
+        {delta}
+      </div>
       <div className="mt-1 text-[10px] text-fg-faint">{sub}</div>
     </div>
+  );
+}
+
+/** Percentage change vs the previous run — green when cheaper, amber when not. */
+function CostDelta({ from, to }: { from: number; to: number }) {
+  const pct = ((to - from) / from) * 100;
+  const cheaper = pct < 0;
+  if (Math.abs(pct) < 0.5) {
+    return <span className="font-mono text-[10px] text-fg-faint">~ prev</span>;
+  }
+  return (
+    <span
+      className="font-mono text-[10px] font-semibold"
+      style={{ color: cheaper ? "var(--success)" : "var(--warn)" }}
+      title="vs previous run"
+    >
+      {cheaper ? "▼" : "▲"} {Math.abs(pct).toFixed(0)}%
+    </span>
   );
 }
 

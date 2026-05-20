@@ -42,8 +42,10 @@ export default function Home() {
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [ttfbMs, setTtfbMs] = useState<number | null>(null);
   const [history, setHistory] = useState<RunResult[]>([]);
+  const [prevRun, setPrevRun] = useState<RunResult | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const historyRef = useRef<RunResult[]>([]);
 
   useEffect(() => {
     setApiKey(loadApiKey());
@@ -51,12 +53,19 @@ export default function Home() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
   const run = useCallback(async () => {
     if (!apiKey) {
       setShowKey(true);
       return;
     }
     if (status === "streaming") return;
+
+    // Snapshot the most recent past run so the X-Ray can show a cost delta.
+    setPrevRun(historyRef.current[0] ?? null);
 
     setStatus("streaming");
     setOutput("");
@@ -144,6 +153,7 @@ export default function Home() {
 
   const restore = (r: RunResult) => {
     setRequest(structuredClone(r.request));
+    setPrevRun(null);
     setOutput(r.output);
     setUsage(r.usage);
     setLatencyMs(r.latencyMs);
@@ -236,6 +246,8 @@ export default function Home() {
               usage={usage}
               latencyMs={latencyMs}
               ttfbMs={ttfbMs}
+              compareModel={prevRun?.model}
+              compareUsage={prevRun?.usage}
             />
           </div>
         </section>
