@@ -10,9 +10,8 @@ No backend. No accounts. Your API key never leaves your browser.
 
 ![claudoscope](docs/preview.png)
 
-> The shot above is the idle state. Run the **Caching demo** twice and the
-> X-Ray bar fills with color — replace `docs/preview.png` with that for the
-> full effect.
+> No API key handy? Append **`?demo=1`** to the URL to land straight on a
+> sample run — the screenshot above is exactly that view.
 
 ---
 
@@ -42,10 +41,14 @@ Prompt caching can cut cost by ~90% on the cached portion — but only if you ca
 - **Real economics** — estimated cost, time-to-first-token, total latency,
   output throughput (tokens/sec), and a cache-impact readout showing exactly
   how much a cache hit saved you.
+- **Cost delta** — every run's cost is compared to the one before it, so the
+  caching demo lands: the second run visibly drops ~70%.
 - **Caching demo built in** — a preset with a long cached system prompt. Run it
   twice and watch the yellow *cache write* turn into a green *cache read*.
-- **History** — the last 25 runs are saved locally; click any one to restore
-  the full request and its x-ray.
+- **Session history** — the last 25 runs are saved locally with a cost-per-run
+  bar chart; click any run to restore the full request and its x-ray.
+- **Sample mode** — no key? Hit *Preview with sample data* (or open `?demo=1`)
+  to see the whole tool populated with a representative run.
 
 ## The caching demo
 

@@ -10,9 +10,18 @@ interface Props {
   output: string;
   error: string | null;
   stopReason: string | null;
+  sample?: boolean;
+  onLoadSample?: () => void;
 }
 
-export function OutputPane({ status, output, error, stopReason }: Props) {
+export function OutputPane({
+  status,
+  output,
+  error,
+  stopReason,
+  sample,
+  onLoadSample,
+}: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -36,6 +45,11 @@ export function OutputPane({ status, output, error, stopReason }: Props) {
           {stopReason && status === "done" && (
             <span className="font-mono text-[11px] text-fg-faint">
               stop: {stopReason}
+            </span>
+          )}
+          {sample && (
+            <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+              sample data
             </span>
           )}
         </div>
@@ -64,7 +78,7 @@ export function OutputPane({ status, output, error, stopReason }: Props) {
             )}
           </div>
         ) : (
-          <EmptyState status={status} />
+          <EmptyState status={status} onLoadSample={onLoadSample} />
         )}
       </div>
     </div>
@@ -87,15 +101,29 @@ function StatusBadge({ status }: { status: RunStatus }) {
   );
 }
 
-function EmptyState({ status }: { status: RunStatus }) {
+function EmptyState({
+  status,
+  onLoadSample,
+}: {
+  status: RunStatus;
+  onLoadSample?: () => void;
+}) {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
       <div className="mb-2 font-mono text-xs text-fg-faint">
         {status === "streaming" ? "waiting for first token…" : "no response yet"}
       </div>
-      <p className="max-w-[16rem] text-xs text-fg-faint">
+      <p className="mb-4 max-w-[17rem] text-xs text-fg-faint">
         Run a request to stream a live response and x-ray its token economics.
       </p>
+      {status === "idle" && onLoadSample && (
+        <button
+          onClick={onLoadSample}
+          className="rounded-lg border border-border-strong px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg"
+        >
+          Preview with sample data
+        </button>
+      )}
     </div>
   );
 }

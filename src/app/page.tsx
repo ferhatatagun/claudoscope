@@ -9,7 +9,7 @@ import { OutputPane, type RunStatus } from "@/components/OutputPane";
 import { XRayPanel } from "@/components/XRayPanel";
 import { HistoryDrawer } from "@/components/HistoryDrawer";
 import { runStream } from "@/lib/anthropic";
-import { DEFAULT_REQUEST } from "@/lib/presets";
+import { DEFAULT_REQUEST, PRESETS, SAMPLE } from "@/lib/presets";
 import {
   loadApiKey,
   saveApiKey,
@@ -43,6 +43,7 @@ export default function Home() {
   const [ttfbMs, setTtfbMs] = useState<number | null>(null);
   const [history, setHistory] = useState<RunResult[]>([]);
   const [prevRun, setPrevRun] = useState<RunResult | null>(null);
+  const [sample, setSample] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const historyRef = useRef<RunResult[]>([]);
@@ -66,6 +67,7 @@ export default function Home() {
 
     // Snapshot the most recent past run so the X-Ray can show a cost delta.
     setPrevRun(historyRef.current[0] ?? null);
+    setSample(false);
 
     setStatus("streaming");
     setOutput("");
@@ -154,6 +156,7 @@ export default function Home() {
   const restore = (r: RunResult) => {
     setRequest(structuredClone(r.request));
     setPrevRun(null);
+    setSample(false);
     setOutput(r.output);
     setUsage(r.usage);
     setLatencyMs(r.latencyMs);
@@ -163,6 +166,44 @@ export default function Home() {
     setStatus(r.error ? "error" : "done");
     setShowHistory(false);
   };
+
+  // Populate the UI with canned data so a visitor without a key sees it alive.
+  const loadSample = () => {
+    if (status === "streaming") return;
+    const req = PRESETS[1].build();
+    setRequest(req);
+    setPrevRun({
+      id: "sample-prev",
+      createdAt: Date.now(),
+      model: SAMPLE.prevModel,
+      request: req,
+      output: "",
+      usage: SAMPLE.prevUsage,
+      latencyMs: 0,
+      ttfbMs: null,
+      stopReason: "end_turn",
+    });
+    setOutput(SAMPLE.output);
+    setUsage(SAMPLE.usage);
+    setLatencyMs(SAMPLE.latencyMs);
+    setTtfbMs(SAMPLE.ttfbMs);
+    setStopReason(SAMPLE.stopReason);
+    setError(null);
+    setStatus("done");
+    setSample(true);
+  };
+
+  // Open with ?demo=1 (or #demo) to land straight on the sample run.
+  const demoLoaded = useRef(false);
+  useEffect(() => {
+    if (demoLoaded.current || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("demo") || window.location.hash === "#demo") {
+      demoLoaded.current = true;
+      loadSample();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const keyMasked = apiKey ? `••••${apiKey.slice(-4)}` : "no key";
 
@@ -238,6 +279,8 @@ export default function Home() {
               output={output}
               error={error}
               stopReason={stopReason}
+              sample={sample}
+              onLoadSample={loadSample}
             />
           </div>
           <div className="min-h-0 bg-bg-elev-2">
