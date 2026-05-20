@@ -8,12 +8,12 @@ and cost — in real time, as the response streams.
 
 No backend. No accounts. Your API key never leaves your browser.
 
-**[Live → claudoscope.vercel.app](https://claudoscope.vercel.app)** ·
-**[See it with no key → claudoscope.vercel.app/?demo=1](https://claudoscope.vercel.app/?demo=1)**
+**[Live → claudoscope-labs.vercel.app](https://claudoscope-labs.vercel.app)** ·
+**[See it with no key → claudoscope-labs.vercel.app/?demo=1](https://claudoscope-labs.vercel.app/?demo=1)**
 
 ![claudoscope](docs/preview.png)
 
-> No API key handy? Open [**`/?demo=1`**](https://claudoscope.vercel.app/?demo=1)
+> No API key handy? Open [**`/?demo=1`**](https://claudoscope-labs.vercel.app/?demo=1)
 > to land straight on a sample run — the screenshot above is exactly that view.
 
 ---
