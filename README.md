@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# claudoscope
 
-## Getting Started
+**See through to what Claude is doing.**
 
-First, run the development server:
+A bring-your-own-key playground for the Anthropic Messages API that *visualizes*
+the parts you normally never see — prompt caching, token composition, latency,
+and cost — in real time, as the response streams.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+No backend. No accounts. Your API key never leaves your browser.
+
+<!-- Add a screenshot once you've run it: docs/preview.png
+![claudoscope](docs/preview.png)
+-->
+
+---
+
+## Why
+
+Most people call the Claude API and see two numbers: input tokens and output
+tokens. But a single request is actually four different things being billed at
+four different rates:
+
+| Segment | What it is | Rate |
+| --- | --- | --- |
+| **cache read** | input served from the prompt cache | ~10% of input |
+| **cache write** | input freshly written into the cache | ~125% of input |
+| **uncached input** | everything else you sent | full input price |
+| **output** | what Claude generated | 5× input price |
+
+Prompt caching can cut cost by ~90% on the cached portion — but only if you can
+*see* whether your cache is actually hitting. claudoscope makes that visible.
+
+## What it does
+
+- **BYOK, zero backend** — the request goes straight from your browser to
+  `api.anthropic.com`. The key lives in `localStorage`, nowhere else.
+- **Live streaming** — responses render token-by-token over raw SSE.
+- **The X-Ray panel** — a stacked bar breaks every request into cache read /
+  cache write / uncached input / output, with exact counts.
+- **Real economics** — estimated cost, time-to-first-token, total latency,
+  output throughput (tokens/sec), and a cache-impact readout showing exactly
+  how much a cache hit saved you.
+- **Caching demo built in** — a preset with a long cached system prompt. Run it
+  twice and watch the yellow *cache write* turn into a green *cache read*.
+- **History** — the last 25 runs are saved locally; click any one to restore
+  the full request and its x-ray.
+
+## The caching demo
+
+1. Open the app, add your Anthropic API key.
+2. Pick the **Caching demo** preset (loads a long, cache-enabled system prompt).
+3. Run it once → the X-Ray shows a **cache write** (yellow) — a one-time premium.
+4. Run the *same* request again within 5 minutes → that segment turns into a
+   **cache read** (green), and the cache-impact panel shows the money saved.
+
+That green-vs-yellow flip is the whole point of prompt caching, made visible.
+
+## How it works
+
+```
+src/
+  app/
+    page.tsx          orchestration: state, run loop, keyboard shortcuts
+    layout.tsx        fonts, metadata
+    globals.css       design tokens, dark theme
+  components/
+    RequestPane.tsx   model · system prompt · messages · params
+    OutputPane.tsx    streaming response + status
+    XRayPanel.tsx     token-composition bar + cost + latency
+    HistoryDrawer.tsx local run history
+    KeyDialog.tsx     BYOK key entry
+  lib/
+    anthropic.ts      fetch-based streaming client + manual SSE parser
+    pricing.ts        tier-aware cost model
+    presets.ts        example requests (incl. the caching demo)
+    storage.ts        localStorage helpers
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The Anthropic SDK is intentionally **not** used: its agent-toolset entry pulls
+in Node-only modules that break browser bundling. Talking to the Messages API
+directly over `fetch` keeps the bundle lean and puts the SSE parsing — the part
+worth showing — in plain sight (`lib/anthropic.ts`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Cost is derived from the model *tier* (opus / sonnet / haiku detected from the
+model name), so dated snapshots and future minor versions still get a sensible
+estimate. Update the numbers in `lib/pricing.ts` when pricing changes.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Run locally
 
-## Learn More
+```bash
+npm install
+npm run dev
+# open http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+You'll need an Anthropic API key — create one at
+[console.anthropic.com](https://console.anthropic.com/settings/keys).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Any static-friendly host works. One-click on Vercel:
 
-## Deploy on Vercel
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ferhatatagun/claudoscope)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+There are no environment variables — the key is supplied by the user at runtime.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Privacy
+
+- The API key is stored only in your browser's `localStorage`.
+- Requests go directly to Anthropic; nothing is proxied, logged, or persisted
+  server-side (there is no server).
+- Run history lives in `localStorage` and can be cleared from the History panel.
+
+## Tech
+
+Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Framer Motion
+
+## License
+
+MIT — see [LICENSE](LICENSE).
