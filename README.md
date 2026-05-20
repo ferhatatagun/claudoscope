@@ -8,9 +8,11 @@ and cost — in real time, as the response streams.
 
 No backend. No accounts. Your API key never leaves your browser.
 
-<!-- Add a screenshot once you've run it: docs/preview.png
 ![claudoscope](docs/preview.png)
--->
+
+> The shot above is the idle state. Run the **Caching demo** twice and the
+> X-Ray bar fills with color — replace `docs/preview.png` with that for the
+> full effect.
 
 ---
 
