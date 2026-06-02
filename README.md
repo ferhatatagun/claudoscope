@@ -125,11 +125,12 @@ Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Framer Motion
 
 ## A small suite
 
-Three tools for seeing what Claude is doing, built together with a shared design language:
+Four tools for seeing what Claude is doing, built together with a shared design language:
 
 - **claudoscope** — x-ray your Claude API calls *(this one)*
 - [agent-replay](https://github.com/ferhatatagun/agent-replay) — replay an agent's tool-calling loop
 - [prompt-lab](https://github.com/ferhatatagun/prompt-lab) — A/B test prompts side by side
+- [tool-lab](https://github.com/ferhatatagun/tool-lab) — interactive tool-use sandbox
 
 ## License
 
