@@ -119,6 +119,19 @@ There are no environment variables — the key is supplied by the user at runtim
   server-side (there is no server).
 - Run history lives in `localStorage` and can be cleared from the History panel.
 
+## Read the story
+
+Two long-form write-ups that explain how this was built and why it
+visualizes what it does:
+
+- [**Building a streaming Claude client in the browser — without the SDK**](https://ferhatatagun.com/blog/browser-only-claude-streaming)
+  — the ~150-line SSE parser that powers this tool, why I skipped the official
+  Anthropic SDK for browser work, and how `tool_use` deltas accumulate.
+- [**Prompt caching is the cheapest Claude optimization. Nobody measures it.**](https://ferhatatagun.com/blog/prompt-caching-nobody-measures)
+  — the four `usage` fields most apps log nowhere, why hit ratio is the
+  metric that pays for itself in a week, and the cache misconfigurations
+  this tool surfaces in one glance.
+
 ## Tech
 
 Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Framer Motion
