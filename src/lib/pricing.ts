@@ -1,27 +1,10 @@
 import type { UsageStats } from "./types";
+import { priceFor, resolveModel, type Price } from "./models";
 
-// USD per 1M tokens, by model tier. Reflects Anthropic's published pricing.
-// Cost is detected from the model name, so dated snapshots and future minor
-// versions still get a sensible estimate. Edit here when pricing changes.
-interface Price {
-  input: number;
-  cacheRead: number;
-  cacheWrite5m: number;
-  output: number;
-}
-
-const TIERS: Record<"opus" | "sonnet" | "haiku", Price> = {
-  opus: { input: 15, cacheRead: 1.5, cacheWrite5m: 18.75, output: 75 },
-  sonnet: { input: 3, cacheRead: 0.3, cacheWrite5m: 3.75, output: 15 },
-  haiku: { input: 1, cacheRead: 0.1, cacheWrite5m: 1.25, output: 5 },
-};
-
-export function tierOf(model: string): "opus" | "sonnet" | "haiku" {
-  const m = model.toLowerCase();
-  if (m.includes("opus")) return "opus";
-  if (m.includes("haiku")) return "haiku";
-  return "sonnet";
-}
+// Pricing comes from the model catalog (src/lib/models.ts), per model: the
+// 5.x generation no longer shares one price per tier. Unknown ids price as the
+// newest model of their family, so future releases still get a sensible
+// estimate. Edit the catalog when pricing changes.
 
 export interface CostBreakdown {
   uncachedInput: number;
@@ -29,12 +12,19 @@ export interface CostBreakdown {
   cacheWrite: number;
   output: number;
   total: number;
-  tier: "opus" | "sonnet" | "haiku";
+  /** Label of the model whose rates were applied. */
+  pricing: string;
+  /** false when the id isn't in the catalog and a family default was assumed. */
+  exact: boolean;
+}
+
+function promptTokens(usage: UsageStats): number {
+  return usage.input_tokens + usage.cache_read_input_tokens + usage.cache_creation_input_tokens;
 }
 
 export function computeCost(model: string, usage: UsageStats): CostBreakdown {
-  const tier = tierOf(model);
-  const p = TIERS[tier];
+  const { model: info, exact } = resolveModel(model);
+  const p = priceFor(info, promptTokens(usage));
   const uncachedInput = (usage.input_tokens / 1_000_000) * p.input;
   const cachedRead = (usage.cache_read_input_tokens / 1_000_000) * p.cacheRead;
   const cacheWrite = (usage.cache_creation_input_tokens / 1_000_000) * p.cacheWrite5m;
@@ -45,12 +35,13 @@ export function computeCost(model: string, usage: UsageStats): CostBreakdown {
     cacheWrite,
     output,
     total: uncachedInput + cachedRead + cacheWrite + output,
-    tier,
+    pricing: exact ? info.label : `${info.label} (assumed)`,
+    exact,
   };
 }
 
-export function priceOf(model: string): Price {
-  return TIERS[tierOf(model)];
+export function priceOf(model: string, promptTokens = 0): Price {
+  return priceFor(resolveModel(model).model, promptTokens);
 }
 
 export function formatUSD(n: number): string {

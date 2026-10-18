@@ -47,7 +47,7 @@ export function XRayPanel({
       : null;
 
   // Cache economics
-  const p = priceOf(model);
+  const p = priceOf(model, u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens);
   const savedOnReads = (u.cache_read_input_tokens / 1_000_000) * (p.input - p.cacheRead);
   const writePremium =
     (u.cache_creation_input_tokens / 1_000_000) * (p.cacheWrite5m - p.input);
@@ -123,7 +123,7 @@ export function XRayPanel({
             icon={<CircleDollarSign size={13} />}
             label="Cost"
             value={formatUSD(cost.total)}
-            sub={`est · ${cost.tier} pricing`}
+            sub={`est · ${cost.pricing} pricing`}
             delta={
               prevCost != null && prevCost > 0 && cost.total > 0 ? (
                 <CostDelta from={prevCost} to={cost.total} />
