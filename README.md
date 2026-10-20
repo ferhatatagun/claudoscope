@@ -85,7 +85,8 @@ src/
     KeyDialog.tsx     BYOK key entry
   lib/
     anthropic.ts      fetch-based streaming client + manual SSE parser
-    pricing.ts        tier-aware cost model
+    models.ts         model catalog: ids, per-model pricing, capabilities
+    pricing.ts        cost model built on the catalog
     presets.ts        example requests (incl. the caching demo)
     storage.ts        localStorage helpers
 ```
@@ -95,9 +96,17 @@ in Node-only modules that break browser bundling. Talking to the Messages API
 directly over `fetch` keeps the bundle lean and puts the SSE parsing — the part
 worth showing — in plain sight (`lib/anthropic.ts`).
 
-Cost is derived from the model *tier* (opus / sonnet / haiku detected from the
-model name), so dated snapshots and future minor versions still get a sensible
-estimate. Update the numbers in `lib/pricing.ts` when pricing changes.
+Cost is priced **per model** from the catalog in `lib/models.ts` (the 5.x
+generation no longer shares one price per tier, and Haiku 5.5 has a second rate
+card above 100K prompt tokens). Dated snapshots and Bedrock/Vertex ids resolve to
+their model; an id that isn't in the catalog is priced as the newest model of its
+family and flagged "(assumed)". Update the catalog when a model ships or pricing
+changes.
+
+Two behaviours follow from current models: most reject `temperature` (it is
+disabled and not sent for them), and many think by default, so `output_tokens`
+includes thinking tokens and TTFB is measured at the first content block of any
+kind rather than the first text.
 
 ## Run locally
 

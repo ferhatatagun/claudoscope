@@ -1,6 +1,7 @@
 "use client";
 
-import { MODEL_SUGGESTIONS, type Message, type RequestState, type Role } from "@/lib/types";
+import { supportsSampling } from "@/lib/models";
+import { MODEL_OPTIONS, MODEL_SUGGESTIONS, type Message, type RequestState, type Role } from "@/lib/types";
 import { PRESETS } from "@/lib/presets";
 import { uid } from "@/lib/storage";
 import { Plus, Trash2, Play, Square, Database, Sparkles } from "lucide-react";
@@ -16,6 +17,7 @@ interface Props {
 
 export function RequestPane({ request, onChange, running, hasKey, onRun, onStop }: Props) {
   const patch = (p: Partial<RequestState>) => onChange({ ...request, ...p });
+  const sampling = supportsSampling(request.model);
 
   const updateMessage = (id: string, p: Partial<Message>) =>
     patch({ messages: request.messages.map((m) => (m.id === id ? { ...m, ...p } : m)) });
@@ -57,11 +59,11 @@ export function RequestPane({ request, onChange, running, hasKey, onRun, onStop 
             onChange={(e) => patch({ model: e.target.value.trim() })}
             spellCheck={false}
             autoComplete="off"
-            placeholder="claude-sonnet-4-5-20250929"
+            placeholder="claude-sonnet-5-5"
             className="w-full rounded-lg border border-border-strong bg-bg px-3 py-2 font-mono text-xs text-fg outline-none transition-colors placeholder:text-fg-faint focus:border-accent"
           />
           <datalist id="model-suggestions">
-            {MODEL_SUGGESTIONS.map((m) => (
+            {MODEL_OPTIONS.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label}
               </option>
@@ -185,15 +187,23 @@ export function RequestPane({ request, onChange, running, hasKey, onRun, onStop 
               className="w-full accent-[var(--accent)]"
             />
           </Field>
-          <Field label={`Temperature · ${request.temperature.toFixed(1)}`}>
+          <Field
+            label={
+              sampling
+                ? `Temperature · ${request.temperature.toFixed(1)}`
+                : "Temperature · fixed by model"
+            }
+          >
             <input
               type="range"
               min={0}
               max={1}
               step={0.1}
               value={request.temperature}
+              disabled={!sampling}
+              title={sampling ? undefined : "This model rejects sampling parameters, so temperature is not sent."}
               onChange={(e) => patch({ temperature: Number(e.target.value) })}
-              className="w-full accent-[var(--accent)]"
+              className="w-full accent-[var(--accent)] disabled:opacity-40"
             />
           </Field>
         </div>

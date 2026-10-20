@@ -3,8 +3,9 @@ import { uid } from "./storage";
 
 /**
  * A deliberately long support document. Prompt caching only engages above a
- * minimum prompt size (~1024 tokens for Sonnet/Opus), so this is sized well
- * past that — otherwise the "caching demo" would never actually cache.
+ * minimum prompt size (512 tokens on the newest models, up to 4096 on Opus 4.6/4.5
+ * and Haiku 4.5), so this is sized well past the common cases — otherwise the
+ * "caching demo" would never actually cache.
  */
 const KNOWLEDGE_BASE = `# Aurora Robotics — Internal Support Knowledge Base (v4)
 
@@ -108,13 +109,14 @@ export const PRESETS: Preset[] = [
     name: "Quick hello",
     hint: "Minimal request — a single short message.",
     build: () => ({
-      model: "claude-sonnet-4-5-20250929",
+      model: "claude-sonnet-5-5",
       system: "You are a concise, friendly assistant.",
       cacheSystem: false,
       messages: [
         { id: uid(), role: "user", content: "Explain prompt caching like I'm five, in 2 sentences." },
       ],
-      maxTokens: 256,
+      // Headroom for models that think by default — thinking tokens count against max_tokens.
+      maxTokens: 2048,
       temperature: 1,
     }),
   },
@@ -123,7 +125,7 @@ export const PRESETS: Preset[] = [
     name: "Caching demo",
     hint: "Long cached system prompt. Run it twice — watch the cache write turn into a cache read.",
     build: () => ({
-      model: "claude-sonnet-4-5-20250929",
+      model: "claude-sonnet-5-5",
       system: KNOWLEDGE_BASE,
       cacheSystem: true,
       messages: [
@@ -134,7 +136,7 @@ export const PRESETS: Preset[] = [
             "A customer says their HAUL-2 keeps showing 'unit offline' in the fleet manager. Walk them through the fix.",
         },
       ],
-      maxTokens: 512,
+      maxTokens: 2048,
       temperature: 1,
     }),
   },
@@ -179,7 +181,7 @@ If it's still offline after that, escalate to Tier 2 for remote diagnostics. But
     cache_read_input_tokens: 0,
     cache_creation_input_tokens: 2148,
   },
-  prevModel: "claude-sonnet-4-5-20250929",
+  prevModel: "claude-sonnet-5-5",
   latencyMs: 2980,
   ttfbMs: 446,
   stopReason: "end_turn",
