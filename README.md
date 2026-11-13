@@ -108,6 +108,10 @@ disabled and not sent for them), and many think by default, so `output_tokens`
 includes thinking tokens and TTFB is measured at the first content block of any
 kind rather than the first text.
 
+## Use it as a skill
+
+The same analysis ships as an agent skill, `skills/claude-api-xray/`. Copy that folder to `~/.claude/skills/` (Claude Code) or find it on [Agensi](https://www.agensi.io). Paste a `usage` block and the agent splits it into cache read / cache write / uncached input / output, prices each, and tells you whether caching is hitting.
+
 ## Run locally
 
 ```bash
